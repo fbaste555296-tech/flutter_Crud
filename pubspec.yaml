@@ -1,4 +1,4 @@
-name: flutter_application_1
+name: firebase_crudnote
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -31,8 +31,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  firebase_core: ^4.1.0
-  cloud_firestore: ^6.0.0
+  firebase_core: ^3.0.0
+  cloud_firestore: ^5.0.0
+  firebase_auth: ^5.0.0
+  google_sign_in: ^6.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

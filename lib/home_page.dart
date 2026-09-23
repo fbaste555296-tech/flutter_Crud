@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'auth_service.dart';
 import 'crud_service.dart';
+import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,12 +28,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.grey[300],
       appBar: AppBar(
         title: const Text('Firebase Baste'),
         centerTitle: true,
         backgroundColor: Colors.teal,
         actions: [
+          // Favorites filter toggle
           IconButton(
             tooltip: showFavoritesOnly ? 'Show all' : 'Show favorites',
             icon: Icon(
@@ -44,12 +47,25 @@ class _HomePageState extends State<HomePage> {
               });
             },
           ),
+          // Logout
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              await AuthService().signOut();
+              if (!mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => LoginPage()),
+              );
+            },
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.teal,
         child: const Icon(Icons.add, color: Colors.white),
-        onPressed: () => openAddDialog(context),
+        onPressed: () => _openAddDialog(context),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: service.getItems(),
@@ -103,14 +119,12 @@ class _HomePageState extends State<HomePage> {
                   ),
                   subtitle: Text(
                     "Quantity ${data['quantity']}",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Favorite toggle
                       IconButton(
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -119,10 +133,12 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () =>
                             service.toggleFavorite(item.id, isFavorite),
                       ),
+                      // Edit
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.orange),
-                        onPressed: () => openEditDialog(context, item),
+                        onPressed: () => _openEditDialog(context, item),
                       ),
+                      // Delete
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _confirmDelete(context, item.id),
@@ -138,32 +154,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // DELETE UI
-  void _confirmDelete(BuildContext context, String id) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Delete item"),
-        content: const Text("Are you sure you want to delete this item?"),
-        actions: [
-          TextButton(
-            child: const Text("Cancel"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
-            onPressed: () {
-              service.deleteItem(id);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ADD UI
-  void openAddDialog(BuildContext context) {
+  // ── ADD ──────────────────────────────────────────────────────────────────────
+  void _openAddDialog(BuildContext context) {
     nameCtrl.clear();
     qtyCtrl.clear();
 
@@ -198,7 +190,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
+            child: const Text("Cancel"),
             onPressed: () => Navigator.pop(context),
           ),
           ElevatedButton(
@@ -211,10 +203,7 @@ class _HomePageState extends State<HomePage> {
             child: const Text("Save"),
             onPressed: () {
               if (nameCtrl.text.isNotEmpty && qtyCtrl.text.isNotEmpty) {
-                service.addItem(
-                  nameCtrl.text,
-                  int.parse(qtyCtrl.text),
-                );
+                service.addItem(nameCtrl.text.trim(), int.parse(qtyCtrl.text));
                 Navigator.pop(context);
               }
             },
@@ -224,8 +213,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // EDIT UI
-  void openEditDialog(BuildContext context, DocumentSnapshot item) {
+  // ── EDIT ─────────────────────────────────────────────────────────────────────
+  void _openEditDialog(BuildContext context, DocumentSnapshot item) {
     final data = item.data() as Map<String, dynamic>;
     nameCtrl.text = data['name'];
     qtyCtrl.text = data['quantity'].toString();
@@ -276,11 +265,35 @@ class _HomePageState extends State<HomePage> {
               if (nameCtrl.text.isNotEmpty && qtyCtrl.text.isNotEmpty) {
                 service.updateItem(
                   item.id,
-                  nameCtrl.text,
+                  nameCtrl.text.trim(),
                   int.parse(qtyCtrl.text),
                 );
                 Navigator.pop(context);
               }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── DELETE ───────────────────────────────────────────────────────────────────
+  void _confirmDelete(BuildContext context, String id) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete item"),
+        content: const Text("Are you sure you want to delete this item?"),
+        actions: [
+          TextButton(
+            child: const Text("Cancel"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              service.deleteItem(id);
+              Navigator.pop(context);
             },
           ),
         ],
